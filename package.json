@@ -1,0 +1,22 @@
+{
+  "name": "spongebob-menu",
+  "version": "1.0.0",
+  "description": "海绵宝宝主题点餐网站",
+  "main": "index.html",
+  "scripts": {
+    "dev": "echo \"请直接在浏览器中打开index.html文件\"",
+    "build": "echo \"静态网站无需构建\""
+  },
+  "keywords": [
+    "点餐",
+    "海绵宝宝",
+    "主题餐厅",
+    "积分系统",
+    "家务券"
+  ],
+  "author": "您的名字",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海绵宝宝主题点餐系统</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 统一的 Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FFD700', // 海绵宝宝黄色
+                        secondary: '#1E90FF', // 蓝色
+                        accent: '#FF6347', // 蟹老板红色
+                        background: '#F0F8FF', // 浅蓝色背景
+                        text: '#333333'
+                    },
+                    fontFamily: {
+                        sans: ['Arial', 'sans-serif'],
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 2s infinite',
+                        'wiggle': 'wiggle 1s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        wiggle: {
+                            '0%, 100%': { transform: 'rotate(-3deg)' },
+                            '50%': { transform: 'rotate(3deg)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+            .card-hover:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+            .menu-active {
+                border-bottom: 4px solid theme('colors.accent');
+                color: theme('colors.accent');
+            }
+            .admin-tab-active {
+                border-bottom: 4px solid theme('colors.secondary');
+                color: theme('colors.secondary');
+                font-weight: bold;
+            }
+        }
+    </style>
+</head>
+<body class="bg-background min-h-screen">
+    <!-- 背景音乐 -->
+    <audio id="backgroundMusic" loop>
+        <source src="" type="audio/mpeg">
+    </audio>
+    
+    <!-- 顶部导航栏 -->
+    <header class="bg-primary shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center">
+                <img id="logoImage" src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/e7dff219a9ec41bdb5665b15a7b9b6f3~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954666&x-signature=P060%2BfwsDQzSjqcAWeiWwkK3ua8%3D" alt="海绵宝宝" class="w-12 h-12 rounded-full mr-3">
+                <h1 class="text-2xl font-bold text-text text-shadow">海绵宝宝主题餐厅</h1>
+            </div>
+            <div class="flex items-center">
+                <div class="bg-secondary text-white px-4 py-2 rounded-full mr-4 flex items-center">
+                    <i class="fa fa-star mr-2"></i>
+                    <span id="totalPoints">0</span> 积分
+                </div>
+                <div class="relative">
+                    <button id="cartButton" class="bg-accent hover:bg-red-500 text-white px-4 py-2 rounded-full flex items-center transition-all">
+                        <i class="fa fa-shopping-cart mr-2"></i>
+                        <span id="cartCount" class="absolute -top-2 -right-2 bg-secondary text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">0</span>
+                        购物车
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主横幅 -->
+    <div id="banner" class="relative bg-cover bg-center" style="background-image: url('https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/a48e8cb0acc84ecf941e3d26a93c5f1c~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954664&x-signature=lNFmiNp46ACLy5ptp837fT2Ksdw%3D');">
+        <div class="absolute inset-0 bg-black bg-opacity-30"></div>
+        <div class="container mx-auto px-4 py-16 relative z-10 text-center">
+            <h2 class="text-4xl font-bold text-white mb-4 text-shadow animate-bounce-slow">欢迎来到海绵宝宝的餐厅！</h2>
+            <p class="text-xl text-white mb-8 text-shadow">今天想吃什么呢？让我来为你准备美味的晚餐！</p>
+            <div class="flex justify-center">
+                <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/e7dff219a9ec41bdb5665b15a7b9b6f3~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954666&x-signature=P060%2BfwsDQzSjqcAWeiWwkK3ua8%3D" alt="海绵宝宝" class="w-24 h-24 animate-wiggle">
+            </div>
+        </div>
+    </div>
+
+    <!-- 菜单分类导航 -->
+    <nav class="bg-white shadow-md sticky top-16 z-40">
+        <div class="container mx-auto px-4">
+            <ul class="flex overflow-x-auto whitespace-nowrap py-2" id="menuCategories">
+                <li class="mr-6">
+                    <button class="px-4 py-2 menu-active" data-category="recommended">今日推荐</button>
+                </li>
+                <li class="mr-6">
+                    <button class="px-4 py-2" data-category="regular">固定菜式</button>
+                </li>
+                <li class="mr-6">
+                    <button class="px-4 py-2" data-category="hometown">家乡菜式</button>
+                </li>
+                <li class="mr-6">
+                    <button class="px-4 py-2" data-category="seafood">海鲜大餐</button>
+                </li>
+                <li class="mr-6">
+                    <button class="px-4 py-2" data-category="hotpot">各式火锅</button>
+                </li>
+                <li class="mr-6">
+                    <button class="px-4 py-2" data-category="outside">外出就餐</button>
+                </li>
+                <li class="mr-6">
+                    <button class="px-4 py-2" data-category="exchange">积分兑换</button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- 菜品展示区 -->
+    <main class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="menuItems">
+            <!-- 菜品将通过JavaScript动态生成 -->
+        </div>
+    </main>
+
+    <!-- 购物车侧边栏 -->
+    <div id="cartSidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-lg transform translate-x-full transition-transform duration-300 z-50">
+        <div class="p-4 border-b">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold">购物车</h3>
+                <button id="closeCart" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="p-4 h-full overflow-y-auto" id="cartItems">
+            <!-- 购物车项目将通过JavaScript动态生成 -->
+            <div class="text-center text-gray-500 py-8" id="emptyCartMessage">
+                <i class="fa fa-shopping-cart text-4xl mb-2"></i>
+                <p>购物车是空的</p>
+            </div>
+        </div>
+        <div class="p-4 border-t fixed bottom-0 w-80 bg-white">
+            <div class="flex justify-between mb-4">
+                <span class="font-bold">总计:</span>
+                <span id="cartTotal" class="font-bold">¥0.00</span>
+            </div>
+            <button id="checkoutButton" class="w-full bg-accent hover:bg-red-500 text-white py-2 rounded-lg transition-colors" disabled>
+                结算
+            </button>
+        </div>
+    </div>
+
+    <!-- 遮罩层 -->
+    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
+
+    <!-- 结算弹窗 -->
+    <div id="checkoutModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg w-full max-w-md mx-4 transform transition-all">
+            <div class="p-4 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold">确认订单</h3>
+                    <button id="closeCheckout" class="text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4 max-h-96 overflow-y-auto" id="checkoutItems">
+                <!-- 结算项目将通过JavaScript动态生成 -->
+            </div>
+            <div class="p-4 border-t">
+                <div class="flex justify-between mb-2">
+                    <span class="font-bold">总计:</span>
+                    <span id="checkoutTotal" class="font-bold">¥0.00</span>
+                </div>
+                <div class="flex justify-between mb-4">
+                    <span class="font-bold">获得积分:</span>
+                    <span id="checkoutPoints" class="font-bold text-secondary">0 积分</span>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">通知方式:</label>
+                    <div class="flex items-center">
+                        <i class="fa fa-weixin text-green-500 text-xl mr-2"></i>
+                        <span class="text-green-600 font-medium">微信通知</span>
+                        <input type="hidden" id="notificationMethod" value="wechat">
+                    </div>
+                </div>
+                <button id="confirmOrder" class="w-full bg-accent hover:bg-red-500 text-white py-2 rounded-lg transition-colors">
+                    确认下单
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 家务券生成弹窗 -->
+    <div id="couponModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg w-full max-w-md mx-4 transform transition-all">
+            <div class="p-4 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold">家务券生成</h3>
+                    <button id="closeCoupon" class="text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4">
+                <div class="mb-4">
+                    <label for="couponText" class="block text-gray-700 mb-2">家务券内容:</label>
+                    <textarea id="couponText" class="w-full border rounded-lg p-2" rows="3" placeholder="例如：今晚不用洗碗！"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">家务券预览:</label>
+                    <div class="relative">
+                        <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/e8c0e9c3c59541d78f2e95db821a22fe~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954679&x-signature=Ve806aNDQYM%2Fx%2FN%2FT0qrgN5L7zE%3D" alt="家务券模板" class="w-full rounded-lg">
+                        <div id="couponPreviewText" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-black font-bold text-xl p-2 bg-white bg-opacity-70 rounded-lg w-3/4">
+                            点击下方按钮生成家务券
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-between">
+                    <button id="generateCoupon" class="bg-primary hover:bg-yellow-500 text-black py-2 px-4 rounded-lg transition-colors">
+                        生成家务券
+                    </button>
+                    <button id="saveCoupon" class="bg-secondary hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors">
+                        保存家务券
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 订单成功弹窗 -->
+    <div id="successModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg w-full max-w-md mx-4 transform transition-all text-center">
+            <div class="p-6">
+                <div class="flex justify-center mb-4">
+                    <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/e7dff219a9ec41bdb5665b15a7b9b6f3~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954666&x-signature=P060%2BfwsDQzSjqcAWeiWwkK3ua8%3D" alt="海绵宝宝" class="w-24 h-24 animate-wiggle">
+                </div>
+                <h3 class="text-2xl font-bold mb-2">订单提交成功！</h3>
+                <p class="text-gray-600 mb-6">感谢您的点餐，我会尽快准备美味的晚餐！</p>
+                <button id="closeSuccess" class="bg-accent hover:bg-red-500 text-white py-2 px-6 rounded-lg transition-colors">
+                    确定
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 管理员登录按钮 -->
+    <button id="adminLoginButton" class="fixed bottom-6 right-6 bg-secondary hover:bg-blue-600 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all">
+        <i class="fa fa-lock"></i>
+    </button>
+    
+    <!-- 菜品管理按钮 -->
+    <button id="manageMenuButton" class="fixed bottom-6 right-6 bg-primary hover:bg-yellow-500 text-black w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all hidden">
+        <i class="fa fa-plus"></i>
+    </button>
+
+    <!-- 管理员登录弹窗 -->
+    <div id="adminLoginModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg w-full max-w-md mx-4 transform transition-all">
+            <div class="p-4 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold">管理员登录</h3>
+                    <button id="closeAdminLogin" class="text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="mb-4">
+                    <label for="adminPassword" class="block text-gray-700 mb-2">请输入管理员密码:</label>
+                    <input type="password" id="adminPassword" class="w-full border rounded-lg p-2" placeholder="输入密码">
+                </div>
+                <div id="loginError" class="text-red-500 text-center mb-4 hidden">
+                    密码错误，请重试
+                </div>
+                <button id="loginButton" class="w-full bg-secondary hover:bg-blue-600 text-white py-2 rounded-lg transition-colors">
+                    登录
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 管理员控制面板 -->
+    <div id="adminPanelModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg w-full max-w-4xl mx-4 transform transition-all">
+            <div class="p-4 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold">管理员控制面板</h3>
+                    <div class="flex items-center">
+                        <span class="mr-4 text-sm text-gray-500">已登录</span>
+                        <button id="logoutButton" class="text-red-500 hover:text-red-700 mr-3">
+                            <i class="fa fa-sign-out"></i> 退出
+                        </button>
+                        <button id="closeAdminPanel" class="text-gray-500 hover:text-gray-700">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4">
+                <!-- 管理员功能标签页 -->
+                <div class="mb-4 border-b">
+                    <ul class="flex" id="adminTabs">
+                        <li class="mr-2">
+                            <button class="px-4 py-2 admin-tab-active" data-tab="menu">菜品管理</button>
+                        </li>
+                        <li class="mr-2">
+                            <button class="px-4 py-2" data-tab="exchange">积分兑换管理</button>
+                        </li>
+                        <li class="mr-2">
+                            <button class="px-4 py-2" data-tab="settings">系统设置</button>
+                        </li>
+                        <li class="mr-2">
+                            <button class="px-4 py-2" data-tab="orders">订单历史</button>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 菜品管理 -->
+                <div id="menuTab" class="admin-tab-content">
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-2">
+                            <h4 class="font-bold">添加新菜品</h4>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label for="newItemName" class="block text-gray-700 mb-1">菜品名称:</label>
+                                <input type="text" id="newItemName" class="w-full border rounded-lg p-2" placeholder="输入菜品名称">
+                            </div>
+                            <div>
+                                <label for="newItemPrice" class="block text-gray-700 mb-1">价格:</label>
+                                <input type="number" id="newItemPrice" class="w-full border rounded-lg p-2" placeholder="输入价格" step="0.01">
+                            </div>
+                            <div>
+                                <label for="newItemCategory" class="block text-gray-700 mb-1">分类:</label>
+                                <select id="newItemCategory" class="w-full border rounded-lg p-2">
+                                    <option value="recommended">今日推荐</option>
+                                    <option value="regular">固定菜式</option>
+                                    <option value="hometown">家乡菜式</option>
+                                    <option value="seafood">海鲜大餐</option>
+                                    <option value="hotpot">各式火锅</option>
+                                    <option value="outside">外出就餐</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="newItemCoupon" class="block text-gray-700 mb-1">家务券内容:</label>
+                                <input type="text" id="newItemCoupon" class="w-full border rounded-lg p-2" placeholder="例如：免洗碗一次">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="newItemImage" class="block text-gray-700 mb-1">图片URL:</label>
+                                <input type="text" id="newItemImage" class="w-full border rounded-lg p-2" placeholder="输入图片URL">
+                            </div>
+                        </div>
+                        <button id="addItemButton" class="bg-primary hover:bg-yellow-500 text-black py-2 px-4 rounded-lg transition-colors">
+                            添加菜品
+                        </button>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold mb-2">现有菜品</h4>
+                        <div class="max-h-96 overflow-y-auto" id="manageMenuItems">
+                            <!-- 菜品管理项目将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 积分兑换管理 -->
+                <div id="exchangeTab" class="admin-tab-content hidden">
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-2">
+                            <h4 class="font-bold">添加积分兑换项目</h4>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label for="newExchangeName" class="block text-gray-700 mb-1">项目名称:</label>
+                                <input type="text" id="newExchangeName" class="w-full border rounded-lg p-2" placeholder="输入项目名称">
+                            </div>
+                            <div>
+                                <label for="newExchangePoints" class="block text-gray-700 mb-1">所需积分:</label>
+                                <input type="number" id="newExchangePoints" class="w-full border rounded-lg p-2" placeholder="输入所需积分" min="1">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="newExchangeDescription" class="block text-gray-700 mb-1">项目描述:</label>
+                                <textarea id="newExchangeDescription" class="w-full border rounded-lg p-2" rows="2" placeholder="输入项目描述"></textarea>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="newExchangeImage" class="block text-gray-700 mb-1">图片URL:</label>
+                                <input type="text" id="newExchangeImage" class="w-full border rounded-lg p-2" placeholder="输入图片URL">
+                            </div>
+                        </div>
+                        <button id="addExchangeButton" class="bg-secondary hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors">
+                            添加兑换项目
+                        </button>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold mb-2">现有积分兑换项目</h4>
+                        <div class="max-h-96 overflow-y-auto" id="manageExchangeItems">
+                            <!-- 积分兑换项目将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 系统设置 -->
+                <div id="settingsTab" class="admin-tab-content hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label for="settingsSiteTitle" class="block text-gray-700 mb-1">网站标题:</label>
+                            <input type="text" id="settingsSiteTitle" class="w-full border rounded-lg p-2" placeholder="输入网站标题">
+                        </div>
+                        <div>
+                            <label for="settingsInitialPoints" class="block text-gray-700 mb-1">初始积分:</label>
+                            <input type="number" id="settingsInitialPoints" class="w-full border rounded-lg p-2" placeholder="输入初始积分" min="0">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="settingsWelcomeMessage" class="block text-gray-700 mb-1">欢迎信息:</label>
+                            <textarea id="settingsWelcomeMessage" class="w-full border rounded-lg p-2" rows="2" placeholder="输入欢迎信息"></textarea>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="settingsBannerImage" class="block text-gray-700 mb-1">Banner图片URL:</label>
+                            <input type="text" id="settingsBannerImage" class="w-full border rounded-lg p-2" placeholder="输入Banner图片URL">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="settingsLogoImage" class="block text-gray-700 mb-1">Logo图片URL:</label>
+                            <input type="text" id="settingsLogoImage" class="w-full border rounded-lg p-2" placeholder="输入Logo图片URL">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="settingsBackgroundMusic" class="block text-gray-700 mb-1">背景音乐URL (MP3格式):</label>
+                            <input type="text" id="settingsBackgroundMusic" class="w-full border rounded-lg p-2" placeholder="输入背景音乐URL">
+                        </div>
+                        <div class="md:col-span-2">
+                            <div class="flex items-center">
+                                <label for="settingsEnableBackgroundMusic" class="mr-2">启用背景音乐:</label>
+                                <input type="checkbox" id="settingsEnableBackgroundMusic">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="settingsAdminPassword" class="block text-gray-700 mb-1">管理员密码:</label>
+                            <input type="password" id="settingsAdminPassword" class="w-full border rounded-lg p-2" placeholder="输入新密码">
+                        </div>
+                        <div>
+                            <label class="flex items-center mt-4">
+                                <input type="checkbox" id="settingsEnablePassword" class="mr-2">
+                                <span>启用密码保护</span>
+                            </label>
+                        </div>
+                    </div>
+                    <button id="saveSettingsButton" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg transition-colors">
+                        保存设置
+                    </button>
+                </div>
+
+                <!-- 订单历史 -->
+                <div id="ordersTab" class="admin-tab-content hidden">
+                    <div class="mb-4">
+                        <h4 class="font-bold mb-2">订单历史记录</h4>
+                        <div class="max-h-96 overflow-y-auto" id="orderHistoryItems">
+                            <!-- 订单历史将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // 系统设置
+        let settings = {
+            siteTitle: '海绵宝宝主题餐厅',
+            welcomeMessage: '今天想吃什么呢？让我来为你准备美味的晚餐！',
+            pointsRatio: 1,
+            initialPoints: 0,
+            enablePassword: true,
+            adminPassword: 'admin123',
+            bannerImage: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/a48e8cb0acc84ecf941e3d26a93c5f1c~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954664&x-signature=lNFmiNp46ACLy5ptp837fT2Ksdw%3D',
+            logoImage: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/e7dff219a9ec41bdb5665b15a7b9b6f3~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954666&x-signature=P060%2BfwsDQzSjqcAWeiWwkK3ua8%3D',
+            backgroundMusic: '',
+            enableBackgroundMusic: false
+        };
+        
+        // 从本地存储加载设置
+        const savedSettings = localStorage.getItem('settings');
+        if (savedSettings) {
+            settings = JSON.parse(savedSettings);
+            // 更新页面标题和欢迎信息
+            document.querySelector('header h1').textContent = settings.siteTitle;
+            document.querySelector('#banner h2').textContent = `欢迎来到${settings.siteTitle}！`;
+            document.querySelector('#banner p').textContent = settings.welcomeMessage;
+            
+            // 更新Banner图片
+            if (settings.bannerImage) {
+                document.getElementById('banner').style.backgroundImage = `url('${settings.bannerImage}')`;
+            }
+            
+            // 更新Logo图片
+            if (settings.logoImage) {
+                document.getElementById('logoImage').src = settings.logoImage;
+            }
+        }
+        
+        // 管理员登录状态
+        let isAdminLoggedIn = false;
+        
+        // 积分兑换项目
+        let exchangeItems = [
+            {
+                id: 101,
+                name: '免洗碗券',
+                points: 50,
+                description: '使用此券可免除一次洗碗任务',
+                image: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/e8c0e9c3c59541d78f2e95db821a22fe~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954679&x-signature=Ve806aNDQYM%2Fx%2FN%2FT0qrgN5L7zE%3D'
+            },
+            {
+                id: 102,
+                name: '按摩券',
+                points: 100,
+                description: '享受15分钟的肩颈按摩服务',
+                image: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/e8c0e9c3c59541d78f2e95db821a22fe~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954679&x-signature=Ve806aNDQYM%2Fx%2FN%2FT0qrgN5L7zE%3D'
+            },
+            {
+                id: 103,
+                name: '早餐券',
+                points: 150,
+                description: '免费为您准备一份爱心早餐',
+                image: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/e8c0e9c3c59541d78f2e95db821a22fe~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954679&x-signature=Ve806aNDQYM%2Fx%2FN%2FT0qrgN5L7zE%3D'
+            },
+            {
+                id: 104,
+                name: '电影券',
+                points: 200,
+                description: '一起观看一部您喜欢的电影',
+                image: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/e8c0e9c3c59541d78f2e95db821a22fe~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954679&x-signature=Ve806aNDQYM%2Fx%2FN%2FT0qrgN5L7zE%3D'
+            },
+            {
+                id: 105,
+                name: '礼物券',
+                points: 300,
+                description: '一份精心准备的小礼物',
+                image: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/e8c0e9c3c59541d78f2e95db821a22fe~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954679&x-signature=Ve806aNDQYM%2Fx%2FN%2FT0qrgN5L7zE%3D'
+            }
+        ];
+        
+        // 从本地存储加载积分兑换项目
+        const savedExchangeItems = localStorage.getItem('exchangeItems');
+        if (savedExchangeItems) {
+            exchangeItems = JSON.parse(savedExchangeItems);
+        }
+        
+        // 菜品数据
+        let menuItems = [
+            {
+                id: 1,
+                name: '蟹黄堡',
+                price: 25.00,
+                category: 'recommended',
+                image: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/13408f2f348542bdbad5adac0af8f0cb~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954663&x-signature=4D4LtxIo5DDVhD3abD5kvTUwPDE%3D',
+                couponText: '免洗碗一次'
+            },
+            {
+                id: 2,
+                name: '海绵宝宝披萨',
+                price: 35.00,
+                category: 'recommended',
+                image: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/13408f2f348542bdbad5adac0af8f0cb~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954663&x-signature=4D4LtxIo5DDVhD3abD5kvTUwPDE%3D',
+                couponText: '按摩10分钟'
+            },
+            {
+                id: 3,
+                name: '派大星冰淇淋',
+                price: 15.00,
+                category: 'regular',
+                image: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/eec6af1f0ff54e6d920cbe7d7a8ab857~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954663&x-signature=Az7jDkKToT5PoZNkmIFWntaynSg%3D',
+                couponText: '倒垃圾一次'
+            },
+            {
+                id: 4,
+                name: '章鱼哥意面',
+                price: 30.00,
+                category: 'regular',
+                image: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/13408f2f348542bdbad5adac0af8f0cb~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954663&x-signature=4D4LtxIo5DDVhD3abD5kvTUwPDE%3D',
+                couponText: '拖地一次'
+            },
+            {
+                id: 5,
+                name: '蟹老板海鲜拼盘',
+                price: 88.00,
+                category: 'seafood',
+                image: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/13408f2f348542bdbad5adac0af8f0cb~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954663&x-signature=4D4LtxIo5DDVhD3abD5kvTUwPDE%3D',
+                couponText: '周末陪逛街'
+            },
+            {
+                id: 6,
+                name: '家乡红烧肉',
+                price: 45.00,
+                category: 'hometown',
+                image: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/13408f2f348542bdbad5adac0af8f0cb~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954663&x-signature=4D4LtxIo5DDVhD3abD5kvTUwPDE%3D',
+                couponText: '洗衣一次'
+            },
+            {
+                id: 7,
+                name: '麻辣火锅',
+                price: 128.00,
+                category: 'hotpot',
+                image: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/13408f2f348542bdbad5adac0af8f0cb~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954663&x-signature=4D4LtxIo5DDVhD3abD5kvTUwPDE%3D',
+                couponText: '承包一周家务'
+            },
+            {
+                id: 8,
+                name: '海底捞火锅',
+                price: 158.00,
+                category: 'outside',
+                image: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/13408f2f348542bdbad5adac0af8f0cb~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954663&x-signature=4D4LtxIo5DDVhD3abD5kvTUwPDE%3D',
+                couponText: '买礼物一份'
+            }
+        ];
+        
+        // 订单历史
+        let orderHistory = [];
+        
+        // 积分系统
+        let totalPoints = 0;
+
+        // 购物车数据
+        let cart = [];
+
+        // 当前选中的分类
+        let currentCategory = 'recommended';
+
+        // DOM 元素
+        const menuItemsContainer = document.getElementById('menuItems');
+        const cartButton = document.getElementById('cartButton');
+        const cartSidebar = document.getElementById('cartSidebar');
+        const closeCart = document.getElementById('closeCart');
+        const overlay = document.getElementById('overlay');
+        const cartItems = document.getElementById('cartItems');
+        const cartCount = document.getElementById('cartCount');
+        const cartTotal = document.getElementById('cartTotal');
+        const checkoutButton = document.getElementById('checkoutButton');
+        const checkoutModal = document.getElementById('checkoutModal');
+        const closeCheckout = document.getElementById('closeCheckout');
+        const checkoutItems = document.getElementById('checkoutItems');
+        const checkoutTotal = document.getElementById('checkoutTotal');
+        const confirmOrder = document.getElementById('confirmOrder');
+        const couponModal = document.getElementById('couponModal');
+        const closeCoupon = document.getElementById('closeCoupon');
+        const couponText = document.getElementById('couponText');
+        const couponPreviewText = document.getElementById('couponPreviewText');
+        const generateCoupon = document.getElementById('generateCoupon');
+        const saveCoupon = document.getElementById('saveCoupon');
+        const successModal = document.getElementById('successModal');
+        const closeSuccess = document.getElementById('closeSuccess');
+        const manageMenuButton = document.getElementById('manageMenuButton');
+        const adminLoginButton = document.getElementById('adminLoginButton');
+        const adminLoginModal = document.getElementById('adminLoginModal');
+        const closeAdminLogin = document.getElementById('closeAdminLogin');
+        const adminPanelModal = document.getElementById('adminPanelModal');
+        const closeAdminPanel = document.getElementById('closeAdminPanel');
+        const loginButton = document.getElementById('loginButton');
+        const logoutButton = document.getElementById('logoutButton');
+        const adminPassword = document.getElementById('adminPassword');
+        const loginError = document.getElementById('loginError');
+        const addItemButton = document.getElementById('addItemButton');
+        const manageMenuItems = document.getElementById('manageMenuItems');
+        const emptyCartMessage = document.getElementById('emptyCartMessage');
+        const menuCategories = document.getElementById('menuCategories');
+        const adminTabs = document.getElementById('adminTabs');
+        const adminTabContents = document.querySelectorAll('.admin-tab-content');
+        const addExchangeButton = document.getElementById('addExchangeButton');
+        const manageExchangeItems = document.getElementById('manageExchangeItems');
+        const saveSettingsButton = document.getElementById('saveSettingsButton');
+        const orderHistoryItems = document.getElementById('orderHistoryItems');
+
+        // 更新背景音乐
+        function updateBackgroundMusic() {
+            const audio = document.getElementById('backgroundMusic');
+            
+            // 更新音乐源
+            if (settings.backgroundMusic) {
+                const source = audio.querySelector('source');
+                source.src = settings.backgroundMusic;
+                audio.load();
+                
+                // 根据设置控制播放
+                if (settings.enableBackgroundMusic) {
+                    // 尝试播放音乐（需要用户交互后才能播放）
+                    audio.play().catch(error => {
+                        console.log('音乐播放需要用户交互:', error);
+                        // 可以在这里添加提示，告诉用户需要点击页面才能播放音乐
+                    });
+                } else {
+                    audio.pause();
+                }
+            } else {
+                audio.pause();
+            }
+        }
+        
+        // 初始化页面
+        function init() {
+            // 从本地存储加载数据
+            loadData();
+            
+            // 渲染菜品
+            renderMenuItems();
+            
+            // 渲染购物车
+            updateCart();
+            
+            // 渲染菜品管理
+            renderManageMenuItems();
+            
+            // 更新背景音乐
+            updateBackgroundMusic();
+            
+            // 添加事件监听器
+            addEventListeners();
+            
+            // 添加页面点击事件以启用音乐播放
+            document.addEventListener('click', function enableAudio() {
+                const audio = document.getElementById('backgroundMusic');
+                if (settings.enableBackgroundMusic && settings.backgroundMusic) {
+                    audio.play().catch(error => {
+                        console.log('音乐播放失败:', error);
+                    });
+                }
+                // 移除事件监听器，避免重复触发
+                document.removeEventListener('click', enableAudio);
+            }, { once: true });
+        }
+
+        // 从本地存储加载数据
+        function loadData() {
+            const savedMenuItems = localStorage.getItem('menuItems');
+            const savedCart = localStorage.getItem('cart');
+            const savedOrderHistory = localStorage.getItem('orderHistory');
+            const savedTotalPoints = localStorage.getItem('totalPoints');
+            
+            if (savedMenuItems) {
+                menuItems = JSON.parse(savedMenuItems);
+            }
+            
+            if (savedCart) {
+                cart = JSON.parse(savedCart);
+            }
+            
+            if (savedOrderHistory) {
+                orderHistory = JSON.parse(savedOrderHistory);
+            }
+            
+            if (savedTotalPoints) {
+                totalPoints = parseInt(savedTotalPoints);
+            } else if (settings.initialPoints > 0) {
+                // 如果没有保存的积分且设置了初始积分，则使用初始积分
+                totalPoints = settings.initialPoints;
+            }
+            
+            document.getElementById('totalPoints').textContent = totalPoints;
+        }
+
+        // 保存数据到本地存储
+        function saveData() {
+            localStorage.setItem('menuItems', JSON.stringify(menuItems));
+            localStorage.setItem('cart', JSON.stringify(cart));
+            localStorage.setItem('orderHistory', JSON.stringify(orderHistory));
+            localStorage.setItem('totalPoints', totalPoints.toString());
+        }
+
+        // 渲染菜品
+        function renderMenuItems() {
+            menuItemsContainer.innerHTML = '';
+            
+            // 如果是积分兑换分类
+            if (currentCategory === 'exchange') {
+                // 显示积分兑换标题和当前积分
+                const headerElement = document.createElement('div');
+                headerElement.className = 'col-span-1 md:col-span-2 lg:col-span-3 mb-6 text-center';
+                headerElement.innerHTML = `
+                    <h2 class="text-2xl font-bold text-accent mb-2">积分兑换中心</h2>
+                    <p class="text-lg">当前积分: <span class="text-secondary font-bold">${totalPoints}</span> 积分</p>
+                `;
+                menuItemsContainer.appendChild(headerElement);
+                
+                // 渲染积分兑换项目
+                exchangeItems.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'bg-white rounded-lg shadow-md overflow-hidden card-hover';
+                    
+                    // 检查积分是否足够
+                    const canExchange = totalPoints >= item.points;
+                    
+                    itemElement.innerHTML = `
+                        <img src="${item.image}" alt="${item.name}" class="w-full h-48 object-cover">
+                        <div class="p-4">
+                            <h3 class="text-lg font-bold mb-2">${item.name}</h3>
+                            <div class="mb-2 flex items-center">
+                                <span class="text-secondary font-bold mr-2">${item.points} 积分</span>
+                            </div>
+                            <div class="mb-3 bg-blue-50 p-2 rounded-lg">
+                                <p class="text-sm">${item.description}</p>
+                            </div>
+                            <div class="flex justify-end">
+                                <button class="exchange-item ${canExchange ? 'bg-secondary hover:bg-blue-600' : 'bg-gray-300 cursor-not-allowed'} text-white px-3 py-1 rounded-full transition-colors" 
+                                        data-id="${item.id}" ${!canExchange ? 'disabled' : ''}>
+                                    ${canExchange ? '<i class="fa fa-exchange"></i> 兑换' : '积分不足'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    menuItemsContainer.appendChild(itemElement);
+                });
+                
+                // 添加积分兑换事件
+                document.querySelectorAll('.exchange-item').forEach(button => {
+                    button.addEventListener('click', function() {
+                        if (!this.disabled) {
+                            const itemId = parseInt(this.getAttribute('data-id'));
+                            exchangeItem(itemId);
+                        }
+                    });
+                });
+            } else {
+                // 渲染普通菜品
+                const filteredItems = menuItems.filter(item => item.category === currentCategory);
+                
+                filteredItems.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'bg-white rounded-lg shadow-md overflow-hidden card-hover';
+                    
+                    // 检查是否已在购物车中
+                    const isInCart = cart.some(cartItem => cartItem.id === item.id);
+                    
+                    itemElement.innerHTML = `
+                        <img src="${item.image}" alt="${item.name}" class="w-full h-48 object-cover">
+                        <div class="p-4">
+                            <h3 class="text-lg font-bold mb-2">${item.name}</h3>
+                            <div class="mb-2 flex items-center">
+                                <span class="text-accent font-bold mr-2">¥${item.price.toFixed(2)}</span>
+                                <span class="bg-secondary text-white text-xs px-2 py-1 rounded-full">${Math.round(item.price)} 积分</span>
+                            </div>
+                            <div class="mb-3 bg-yellow-50 p-2 rounded-lg flex items-center">
+                                <i class="fa fa-gift text-primary mr-2"></i>
+                                <span class="text-sm">赠送: ${item.couponText || '自定义家务券'}</span>
+                            </div>
+                            <div class="flex justify-end">
+                                <button class="add-to-cart ${isInCart ? 'bg-green-500 hover:bg-green-600' : 'bg-primary hover:bg-yellow-500'} text-black px-3 py-1 rounded-full transition-colors" 
+                                        data-id="${item.id}">
+                                    ${isInCart ? '<i class="fa fa-check"></i> 已添加' : '<i class="fa fa-plus"></i> 加入购物车'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    menuItemsContainer.appendChild(itemElement);
+                });
+                
+                // 添加加入购物车事件
+                document.querySelectorAll('.add-to-cart').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const itemId = parseInt(this.getAttribute('data-id'));
+                        addToCart(itemId);
+                    });
+                });
+            }
+        }
+
+        // 渲染购物车
+        function updateCart() {
+            // 更新购物车数量
+            cartCount.textContent = cart.length;
+            
+            // 更新购物车项目
+            cartItems.innerHTML = '';
+            
+            // 显示或隐藏空购物车消息
+            if (cart.length === 0) {
+                emptyCartMessage.classList.remove('hidden');
+                checkoutButton.disabled = true;
+            } else {
+                emptyCartMessage.classList.add('hidden');
+                checkoutButton.disabled = false;
+                
+                cart.forEach((item, index) => {
+                    const cartItemElement = document.createElement('div');
+                    cartItemElement.className = 'flex justify-between items-center mb-4 pb-4 border-b';
+                    cartItemElement.innerHTML = `
+                        <div class="flex items-center">
+                            <img src="${item.image}" alt="${item.name}" class="w-12 h-12 rounded-full object-cover mr-3">
+                            <div>
+                                <h4 class="font-bold">${item.name}</h4>
+                                <span class="text-accent">¥${item.price.toFixed(2)}</span>
+                            </div>
+                        </div>
+                        <button class="text-red-500 hover:text-red-700 remove-from-cart" data-index="${index}">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    `;
+                    cartItems.appendChild(cartItemElement);
+                });
+                
+                // 添加移除购物车事件
+                document.querySelectorAll('.remove-from-cart').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const index = parseInt(this.getAttribute('data-index'));
+                        removeFromCart(index);
+                    });
+                });
+            }
+            
+            // 更新购物车总价
+            const total = cart.reduce((sum, item) => sum + item.price, 0);
+            cartTotal.textContent = `¥${total.toFixed(2)}`;
+            
+            // 保存数据
+            saveData();
+        }
+
+        // 渲染结算项目
+        function renderCheckoutItems() {
+            checkoutItems.innerHTML = '';
+            
+            cart.forEach(item => {
+                const checkoutItemElement = document.createElement('div');
+                checkoutItemElement.className = 'flex justify-between items-center mb-4 pb-4 border-b';
+                checkoutItemElement.innerHTML = `
+                    <div class="flex items-center">
+                        <img src="${item.image}" alt="${item.name}" class="w-12 h-12 rounded-full object-cover mr-3">
+                        <div>
+                            <h4 class="font-bold">${item.name}</h4>
+                            <div class="flex items-center">
+                                <span class="text-accent mr-2">¥${item.price.toFixed(2)}</span>
+                                <span class="text-secondary text-xs">${Math.round(item.price)} 积分</span>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">
+                                <i class="fa fa-gift text-primary"></i> ${item.couponText || '自定义家务券'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                checkoutItems.appendChild(checkoutItemElement);
+            });
+            
+            // 更新结算总价和积分
+            const total = cart.reduce((sum, item) => sum + item.price, 0);
+            const points = Math.round(total);
+            checkoutTotal.textContent = `¥${total.toFixed(2)}`;
+            checkoutPoints.textContent = `${points} 积分`;
+        }
+
+        // 渲染菜品管理
+        function renderManageMenuItems() {
+            manageMenuItems.innerHTML = '';
+            
+            menuItems.forEach((item, index) => {
+                const manageItemElement = document.createElement('div');
+                manageItemElement.className = 'flex justify-between items-center mb-4 pb-4 border-b';
+                manageItemElement.innerHTML = `
+                    <div class="flex items-center flex-1">
+                        <img src="${item.image}" alt="${item.name}" class="w-12 h-12 rounded-full object-cover mr-3">
+                        <div class="flex-1">
+                            <h4 class="font-bold">${item.name}</h4>
+                            <div class="flex items-center flex-wrap">
+                                <span class="text-accent mr-4">¥${item.price.toFixed(2)}</span>
+                                <span class="text-gray-500 mr-4">${getCategoryName(item.category)}</span>
+                                <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+                                    <i class="fa fa-gift mr-1"></i>${item.couponText || '自定义家务券'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex">
+                        <button class="text-primary hover:text-yellow-500 mr-3 edit-item" data-index="${index}">
+                            <i class="fa fa-pencil"></i>
+                        </button>
+                        <button class="text-red-500 hover:text-red-700 delete-item" data-index="${index}">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                manageMenuItems.appendChild(manageItemElement);
+            });
+            
+            // 添加删除菜品事件
+            document.querySelectorAll('.delete-item').forEach(button => {
+                button.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    deleteItem(index);
+                });
+            });
+            
+            // 添加编辑菜品事件
+            document.querySelectorAll('.edit-item').forEach(button => {
+                button.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    editItem(index);
+                });
+            });
+        }
+
+        // 添加事件监听器
+        function addEventListeners() {
+            // 购物车侧边栏
+            cartButton.addEventListener('click', toggleCart);
+            closeCart.addEventListener('click', toggleCart);
+            overlay.addEventListener('click', function() {
+                // 关闭所有弹窗
+                toggleCart();
+                closeCheckoutModal();
+                closeCouponModal();
+                closeSuccessModal();
+                closeAdminLoginModal();
+                closeAdminPanelModal();
+            });
+            
+            // 结算
+            checkoutButton.addEventListener('click', openCheckout);
+            closeCheckout.addEventListener('click', closeCheckoutModal);
+            confirmOrder.addEventListener('click', placeOrder);
+            
+            // 家务券
+            closeCoupon.addEventListener('click', closeCouponModal);
+            generateCoupon.addEventListener('click', generateCouponPreview);
+            saveCoupon.addEventListener('click', saveCouponImage);
+            
+            // 成功提示
+            closeSuccess.addEventListener('click', closeSuccessModal);
+            
+            // 管理员登录
+            adminLoginButton.addEventListener('click', openAdminLogin);
+            closeAdminLogin.addEventListener('click', closeAdminLoginModal);
+            loginButton.addEventListener('click', handleAdminLogin);
+            logoutButton.addEventListener('click', handleAdminLogout);
+            closeAdminPanel.addEventListener('click', closeAdminPanelModal);
+            
+            // 管理员标签页切换
+            adminTabs.addEventListener('click', function(e) {
+                if (e.target.tagName === 'BUTTON') {
+                    const tab = e.target.getAttribute('data-tab');
+                    if (tab) {
+                        changeAdminTab(tab);
+                        
+                        // 更新选中状态
+                        document.querySelectorAll('#adminTabs button').forEach(btn => {
+                            btn.classList.remove('admin-tab-active');
+                        });
+                        e.target.classList.add('admin-tab-active');
+                    }
+                }
+            });
+            
+            // 菜品管理
+            addItemButton.addEventListener('click', addNewItem);
+            
+            // 积分兑换管理
+            addExchangeButton.addEventListener('click', addNewExchangeItem);
+            
+            // 系统设置
+            saveSettingsButton.addEventListener('click', saveSettings);
+            
+            // 分类切换
+            menuCategories.addEventListener('click', function(e) {
+                if (e.target.tagName === 'BUTTON') {
+                    const category = e.target.getAttribute('data-category');
+                    if (category) {
+                        changeCategory(category);
+                        
+                        // 更新选中状态
+                        document.querySelectorAll('#menuCategories button').forEach(btn => {
+                            btn.classList.remove('menu-active');
+                        });
+                        e.target.classList.add('menu-active');
+                    }
+                }
+            });
+            
+            // 家务券文本输入
+            couponText.addEventListener('input', function() {
+                couponPreviewText.textContent = this.value || '点击下方按钮生成家务券';
+            });
+        }
+
+        // 切换购物车
+        function toggleCart() {
+            cartSidebar.classList.toggle('translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        // 打开结算
+        function openCheckout() {
+            renderCheckoutItems();
+            checkoutModal.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+            cartSidebar.classList.add('translate-x-full');
+        }
+
+        // 关闭结算
+        function closeCheckoutModal() {
+            checkoutModal.classList.add('hidden');
+            overlay.classList.add('hidden');
+        }
+
+        // 下单
+        function placeOrder() {
+            // 计算总积分
+            const total = cart.reduce((sum, item) => sum + item.price, 0);
+            const points = Math.round(total);
+            
+            // 获取通知方式
+            const notificationMethod = document.getElementById('notificationMethod').value;
+            
+            // 创建订单记录
+            const order = {
+                id: Date.now(),
+                items: [...cart],
+                total: total,
+                points: points,
+                date: new Date().toLocaleString(),
+                notificationMethod: notificationMethod
+            };
+            
+            // 添加到订单历史
+            orderHistory.push(order);
+            
+            // 更新总积分
+            totalPoints += points;
+            
+            // 保存数据
+            saveData();
+            
+            // 更新积分显示
+            document.getElementById('totalPoints').textContent = totalPoints;
+            
+            // 关闭结算弹窗
+            closeCheckoutModal();
+            
+            // 发送订单通知
+            sendOrderNotification(order);
+            
+            // 显示成功提示
+            openSuccessModal();
+            
+            // 清空购物车
+            cart = [];
+            updateCart();
+        }
+
+        // 打开家务券
+        function openCouponModal() {
+            couponModal.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+        }
+
+        // 关闭家务券
+        function closeCouponModal() {
+            couponModal.classList.add('hidden');
+            overlay.classList.add('hidden');
+        }
+
+        // 生成家务券预览
+        function generateCouponPreview() {
+            if (couponText.value.trim() === '') {
+                alert('请输入家务券内容');
+                return;
+            }
+            
+            couponPreviewText.textContent = couponText.value;
+        }
+
+        // 保存家务券图片
+        function saveCouponImage() {
+            if (couponText.value.trim() === '') {
+                alert('请输入家务券内容');
+                return;
+            }
+            
+            // 创建一个canvas元素
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 设置canvas大小
+            canvas.width = 500;
+            canvas.height = 300;
+            
+            // 加载背景图片
+            const background = new Image();
+            background.src = 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/e8c0e9c3c59541d78f2e95db821a22fe~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954679&x-signature=Ve806aNDQYM%2Fx%2FN%2FT0qrgN5L7zE%3D';
+            
+            background.onload = function() {
+                // 绘制背景
+                ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+                
+                // 设置文本样式
+                ctx.font = 'bold 24px Arial';
+                ctx.fillStyle = 'black';
+                ctx.textAlign = 'center';
+                
+                // 绘制文本
+                const text = couponText.value;
+                const lines = text.split('\n');
+                const lineHeight = 30;
+                const startY = canvas.height / 2 - (lines.length * lineHeight) / 2 + 10;
+                
+                lines.forEach((line, index) => {
+                    ctx.fillText(line, canvas.width / 2, startY + index * lineHeight);
+                });
+                
+                // 创建下载链接
+                const link = document.createElement('a');
+                link.download = '家务券.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                // 显示成功提示
+                closeCouponModal();
+                openSuccessModal();
+                
+                // 清空购物车
+                cart = [];
+                updateCart();
+            };
+        }
+
+        // 打开成功提示
+        function openSuccessModal() {
+            successModal.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+        }
+
+        // 关闭成功提示
+        function closeSuccessModal() {
+            successModal.classList.add('hidden');
+            overlay.classList.add('hidden');
+        }
+
+        // 管理员登录相关函数
+        function openAdminLogin() {
+            adminLoginModal.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+            adminPassword.value = '';
+            loginError.classList.add('hidden');
+        }
+
+        function closeAdminLoginModal() {
+            adminLoginModal.classList.add('hidden');
+            overlay.classList.add('hidden');
+        }
+
+        function openAdminPanel() {
+            adminPanelModal.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+            adminLoginModal.classList.add('hidden');
+            
+            // 渲染各个管理页面
+            renderManageMenuItems();
+            renderManageExchangeItems();
+            renderOrderHistory();
+            loadSettingsForm();
+        }
+
+        function closeAdminPanelModal() {
+            adminPanelModal.classList.add('hidden');
+            overlay.classList.add('hidden');
+        }
+
+        function handleAdminLogin() {
+            const enteredPassword = adminPassword.value.trim();
+            
+            if (enteredPassword === settings.adminPassword) {
+                isAdminLoggedIn = true;
+                adminLoginButton.classList.add('hidden');
+                manageMenuButton.classList.remove('hidden');
+                openAdminPanel();
+            } else {
+                loginError.classList.remove('hidden');
+                adminPassword.value = '';
+            }
+        }
+
+        function handleAdminLogout() {
+            isAdminLoggedIn = false;
+            adminLoginButton.classList.remove('hidden');
+            manageMenuButton.classList.add('hidden');
+            closeAdminPanelModal();
+        }
+
+        function changeAdminTab(tab) {
+            adminTabContents.forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            const activeTab = document.getElementById(`${tab}Tab`);
+            if (activeTab) {
+                activeTab.classList.remove('hidden');
+            }
+        }
+
+        // 添加新菜品
+        function addNewItem() {
+            const name = document.getElementById('newItemName').value.trim();
+            const price = parseFloat(document.getElementById('newItemPrice').value);
+            const category = document.getElementById('newItemCategory').value;
+            const couponText = document.getElementById('newItemCoupon').value.trim();
+            const image = document.getElementById('newItemImage').value.trim();
+            
+            if (!name || isNaN(price) || !image) {
+                alert('请填写完整的菜品信息');
+                return;
+            }
+            
+            const newItem = {
+                id: Date.now(),
+                name,
+                price,
+                category,
+                couponText: couponText || '自定义家务券',
+                image
+            };
+            
+            menuItems.push(newItem);
+            saveData();
+            renderManageMenuItems();
+            renderMenuItems();
+            
+            // 清空输入
+            document.getElementById('newItemName').value = '';
+            document.getElementById('newItemPrice').value = '';
+            document.getElementById('newItemCoupon').value = '';
+            document.getElementById('newItemImage').value = '';
+        }
+
+        // 编辑菜品
+        function editItem(index) {
+            const item = menuItems[index];
+            
+            // 填充表单
+            document.getElementById('newItemName').value = item.name;
+            document.getElementById('newItemPrice').value = item.price;
+            document.getElementById('newItemCategory').value = item.category;
+            document.getElementById('newItemCoupon').value = item.couponText || '';
+            document.getElementById('newItemImage').value = item.image;
+            
+            // 删除原菜品
+            menuItems.splice(index, 1);
+            
+            // 保存数据
+            saveData();
+            
+            // 重新渲染
+            renderManageMenuItems();
+            
+            // 滚动到顶部
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        // 删除菜品
+        function deleteItem(index) {
+            menuItems.splice(index, 1);
+            saveData();
+            renderManageMenuItems();
+            renderMenuItems();
+        }
+        
+        // 渲染积分兑换管理
+        function renderManageExchangeItems() {
+            manageExchangeItems.innerHTML = '';
+            
+            exchangeItems.forEach((item, index) => {
+                const manageItemElement = document.createElement('div');
+                manageItemElement.className = 'flex justify-between items-center mb-4 pb-4 border-b';
+                manageItemElement.innerHTML = `
+                    <div class="flex items-center flex-1">
+                        <img src="${item.image}" alt="${item.name}" class="w-12 h-12 rounded-full object-cover mr-3">
+                        <div class="flex-1">
+                            <h4 class="font-bold">${item.name}</h4>
+                            <div class="flex items-center flex-wrap">
+                                <span class="text-secondary mr-4">${item.points} 积分</span>
+                                <span class="text-gray-500">${item.description}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex">
+                        <button class="text-primary hover:text-yellow-500 mr-3 edit-exchange" data-index="${index}">
+                            <i class="fa fa-pencil"></i>
+                        </button>
+                        <button class="text-red-500 hover:text-red-700 delete-exchange" data-index="${index}">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                manageExchangeItems.appendChild(manageItemElement);
+            });
+            
+            // 添加删除积分兑换项目事件
+            document.querySelectorAll('.delete-exchange').forEach(button => {
+                button.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    deleteExchangeItem(index);
+                });
+            });
+            
+            // 添加编辑积分兑换项目事件
+            document.querySelectorAll('.edit-exchange').forEach(button => {
+                button.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    editExchangeItem(index);
+                });
+            });
+        }
+        
+        // 添加新积分兑换项目
+        function addNewExchangeItem() {
+            const name = document.getElementById('newExchangeName').value.trim();
+            const points = parseInt(document.getElementById('newExchangePoints').value);
+            const description = document.getElementById('newExchangeDescription').value.trim();
+            const image = document.getElementById('newExchangeImage').value.trim();
+            
+            if (!name || isNaN(points) || !description || !image) {
+                alert('请填写完整的积分兑换项目信息');
+                return;
+            }
+            
+            const newItem = {
+                id: Date.now(),
+                name,
+                points,
+                description,
+                image
+            };
+            
+            exchangeItems.push(newItem);
+            localStorage.setItem('exchangeItems', JSON.stringify(exchangeItems));
+            renderManageExchangeItems();
+            renderMenuItems();
+            
+            // 清空输入
+            document.getElementById('newExchangeName').value = '';
+            document.getElementById('newExchangePoints').value = '';
+            document.getElementById('newExchangeDescription').value = '';
+            document.getElementById('newExchangeImage').value = '';
+        }
+        
+        // 编辑积分兑换项目
+        function editExchangeItem(index) {
+            const item = exchangeItems[index];
+            
+            // 填充表单
+            document.getElementById('newExchangeName').value = item.name;
+            document.getElementById('newExchangePoints').value = item.points;
+            document.getElementById('newExchangeDescription').value = item.description;
+            document.getElementById('newExchangeImage').value = item.image;
+            
+            // 删除原项目
+            exchangeItems.splice(index, 1);
+            
+            // 保存数据
+            localStorage.setItem('exchangeItems', JSON.stringify(exchangeItems));
+            
+            // 重新渲染
+            renderManageExchangeItems();
+            
+            // 切换到积分兑换管理标签页
+            changeAdminTab('exchange');
+            document.querySelectorAll('#adminTabs button').forEach(btn => {
+                btn.classList.remove('admin-tab-active');
+            });
+            document.querySelector('#adminTabs button[data-tab="exchange"]').classList.add('admin-tab-active');
+        }
+        
+        // 删除积分兑换项目
+        function deleteExchangeItem(index) {
+            exchangeItems.splice(index, 1);
+            localStorage.setItem('exchangeItems', JSON.stringify(exchangeItems));
+            renderManageExchangeItems();
+            renderMenuItems();
+        }
+        
+        // 加载设置表单
+        function loadSettingsForm() {
+            document.getElementById('settingsSiteTitle').value = settings.siteTitle;
+            document.getElementById('settingsWelcomeMessage').value = settings.welcomeMessage;
+            document.getElementById('settingsInitialPoints').value = settings.initialPoints;
+            document.getElementById('settingsEnablePassword').checked = settings.enablePassword;
+            document.getElementById('settingsBannerImage').value = settings.bannerImage;
+            document.getElementById('settingsLogoImage').value = settings.logoImage;
+            document.getElementById('settingsBackgroundMusic').value = settings.backgroundMusic;
+            document.getElementById('settingsEnableBackgroundMusic').checked = settings.enableBackgroundMusic;
+        }
+        
+        // 保存设置
+        function saveSettings() {
+            const siteTitle = document.getElementById('settingsSiteTitle').value.trim();
+            const welcomeMessage = document.getElementById('settingsWelcomeMessage').value.trim();
+            const initialPoints = parseInt(document.getElementById('settingsInitialPoints').value);
+            const enablePassword = document.getElementById('settingsEnablePassword').checked;
+            const adminPassword = document.getElementById('settingsAdminPassword').value.trim();
+            const bannerImage = document.getElementById('settingsBannerImage').value.trim();
+            const logoImage = document.getElementById('settingsLogoImage').value.trim();
+            const backgroundMusic = document.getElementById('settingsBackgroundMusic').value.trim();
+            const enableBackgroundMusic = document.getElementById('settingsEnableBackgroundMusic').checked;
+            
+            if (!siteTitle || !welcomeMessage) {
+                alert('请填写网站标题和欢迎信息');
+                return;
+            }
+            
+            // 更新设置
+            settings.siteTitle = siteTitle;
+            settings.welcomeMessage = welcomeMessage;
+            settings.initialPoints = initialPoints || 0;
+            settings.enablePassword = enablePassword;
+            
+            if (adminPassword) {
+                settings.adminPassword = adminPassword;
+            }
+            
+            // 更新图片和音乐设置
+            if (bannerImage) {
+                settings.bannerImage = bannerImage;
+            }
+            
+            if (logoImage) {
+                settings.logoImage = logoImage;
+            }
+            
+            settings.backgroundMusic = backgroundMusic;
+            settings.enableBackgroundMusic = enableBackgroundMusic;
+            
+            // 保存设置
+            localStorage.setItem('settings', JSON.stringify(settings));
+            
+            // 更新页面显示
+            document.querySelector('header h1').textContent = settings.siteTitle;
+            document.querySelector('#banner h2').textContent = `欢迎来到${settings.siteTitle}！`;
+            document.querySelector('#banner p').textContent = settings.welcomeMessage;
+            
+            // 更新Banner图片
+            if (bannerImage) {
+                document.getElementById('banner').style.backgroundImage = `url('${bannerImage}')`;
+            }
+            
+            // 更新Logo图片
+            if (logoImage) {
+                document.getElementById('logoImage').src = logoImage;
+            }
+            
+            // 更新背景音乐
+            updateBackgroundMusic();
+            
+            // 显示成功提示
+            alert('设置保存成功！');
+        }
+        
+        // 渲染订单历史
+        function renderOrderHistory() {
+            orderHistoryItems.innerHTML = '';
+            
+            if (orderHistory.length === 0) {
+                orderHistoryItems.innerHTML = '<p class="text-center text-gray-500 py-4">暂无订单历史</p>';
+                return;
+            }
+            
+            // 按时间倒序排列
+            const sortedOrders = [...orderHistory].sort((a, b) => b.id - a.id);
+            
+            sortedOrders.forEach(order => {
+                const orderElement = document.createElement('div');
+                orderElement.className = 'mb-4 p-4 border rounded-lg';
+                
+                let itemsHtml = '';
+                order.items.forEach(item => {
+                    itemsHtml += `
+                        <div class="flex justify-between items-center py-2">
+                            <div class="flex items-center">
+                                <img src="${item.image}" alt="${item.name}" class="w-8 h-8 rounded-full object-cover mr-2">
+                                <span>${item.name}</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="text-accent mr-2">¥${item.price.toFixed(2)}</span>
+                                <span class="text-secondary text-xs">${Math.round(item.price)} 积分</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                orderElement.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="font-bold">订单 #${order.id}</h4>
+                        <span class="text-sm text-gray-500">${order.date}</span>
+                    </div>
+                    <div class="mb-2">
+                        <div class="text-sm text-gray-600 mb-1">订单内容:</div>
+                        <div class="bg-gray-50 p-2 rounded">
+                            ${itemsHtml}
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <div>
+                            <span class="font-bold">总计:</span>
+                            <span class="text-accent">¥${order.total.toFixed(2)}</span>
+                        </div>
+                        <div>
+                            <span class="font-bold">获得积分:</span>
+                            <span class="text-secondary">${order.points} 积分</span>
+                        </div>
+                        <div>
+                            <span class="font-bold">通知方式:</span>
+                            <span>${order.notificationMethod === 'email' ? '邮件' : '微信'}</span>
+                        </div>
+                    </div>
+                `;
+                orderHistoryItems.appendChild(orderElement);
+            });
+        }
+
+        // 添加到购物车
+        function addToCart(itemId) {
+            const item = menuItems.find(item => item.id === itemId);
+            if (item) {
+                cart.push({...item});
+                updateCart();
+                
+                // 显示添加成功的动画
+                const button = document.querySelector(`.add-to-cart[data-id="${itemId}"]`);
+                button.innerHTML = '<i class="fa fa-check"></i> 已添加';
+                button.classList.remove('bg-primary', 'hover:bg-yellow-500');
+                button.classList.add('bg-green-500', 'hover:bg-green-600');
+                
+                // 重新渲染菜品以更新所有按钮状态
+                renderMenuItems();
+            }
+        }
+        
+        // 积分兑换
+        function exchangeItem(itemId) {
+            const item = exchangeItems.find(item => item.id === itemId);
+            if (item && totalPoints >= item.points) {
+                // 扣除积分
+                totalPoints -= item.points;
+                
+                // 保存数据
+                saveData();
+                
+                // 更新积分显示
+                document.getElementById('totalPoints').textContent = totalPoints;
+                
+                // 重新渲染积分兑换项目
+                renderMenuItems();
+                
+                // 显示兑换成功提示
+                alert(`兑换成功！您已使用 ${item.points} 积分兑换了 ${item.name}。`);
+            }
+        }
+
+        // 从购物车移除
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCart();
+        }
+
+        // 切换分类
+        function changeCategory(category) {
+            currentCategory = category;
+            renderMenuItems();
+        }
+
+        // 获取分类名称
+        function getCategoryName(category) {
+            const categoryNames = {
+                'recommended': '今日推荐',
+                'regular': '固定菜式',
+                'hometown': '家乡菜式',
+                'seafood': '海鲜大餐',
+                'hotpot': '各式火锅',
+                'outside': '外出就餐'
+            };
+            
+            return categoryNames[category] || category;
+        }
+
+        // 发送订单通知
+        function sendOrderNotification(order) {
+            // 构建订单内容
+            let orderContent = `订单时间：${order.date}\n\n`;
+            orderContent += '订单内容：\n';
+            order.items.forEach(item => {
+                orderContent += `${item.name} - ¥${item.price.toFixed(2)} (${Math.round(item.price)}积分)\n`;
+                orderContent += `  赠送家务券：${item.couponText || '自定义家务券'}\n`;
+            });
+            
+            orderContent += `\n总计：¥${order.total.toFixed(2)}\n`;
+            orderContent += `获得积分：${order.points} 积分\n`;
+            orderContent += `当前总积分：${totalPoints} 积分`;
+            
+            console.log('发送订单通知:', orderContent);
+            
+            // 微信通知实现
+            // 1. 显示订单详情
+            alert('订单已提交！即将发送微信通知...\n\n' + orderContent);
+            
+            // 2. 实际项目中接入微信通知的方法：
+            // 方法A: 使用企业微信机器人
+            // const webhookUrl = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=YOUR_KEY';
+            // fetch(webhookUrl, {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify({
+            //         msgtype: 'text',
+            //         text: { content: '【海绵宝宝餐厅】新订单通知\n\n' + orderContent }
+            //     })
+            // });
+            
+            // 方法B: 使用微信测试号或公众号
+            // 调用后端API，由后端发送模板消息
+            
+            // 方法C: 使用Server酱等第三方服务
+            // const serverChanUrl = 'https://sctapi.ftqq.com/YOUR_SCT_KEY.send';
+            // fetch(serverChanUrl, {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            //     body: `title=海绵宝宝餐厅新订单&desp=${encodeURIComponent(orderContent)}`
+            // });
+        }
+
+        // 初始化
+        init();
+    </script>
+</body>
+</html>

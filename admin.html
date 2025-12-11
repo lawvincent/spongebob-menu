@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海绵宝宝点餐系统 - 后台管理</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 统一的 Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FFD700', // 海绵宝宝黄色
+                        secondary: '#1E90FF', // 蓝色
+                        accent: '#FF6347', // 蟹老板红色
+                        background: '#F0F8FF', // 浅蓝色背景
+                        text: '#333333'
+                    },
+                    fontFamily: {
+                        sans: ['Arial', 'sans-serif'],
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 2s infinite',
+                        'wiggle': 'wiggle 1s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        wiggle: {
+                            '0%, 100%': { transform: 'rotate(-3deg)' },
+                            '50%': { transform: 'rotate(3deg)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+            .card-hover:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+            .menu-active {
+                border-bottom: 4px solid theme('colors.accent');
+                color: theme('colors.accent');
+            }
+        }
+    </style>
+</head>
+<body class="bg-background min-h-screen">
+    <!-- 顶部导航栏 -->
+    <header class="bg-primary shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center">
+                <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/e7dff219a9ec41bdb5665b15a7b9b6f3~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954666&x-signature=P060%2BfwsDQzSjqcAWeiWwkK3ua8%3D" alt="海绵宝宝" class="w-12 h-12 rounded-full mr-3">
+                <h1 class="text-2xl font-bold text-text text-shadow">海绵宝宝点餐系统 - 后台管理</h1>
+            </div>
+            <div class="flex items-center">
+                <span class="bg-red-600 text-white px-4 py-2 rounded-full mr-4 flex items-center">
+                    <i class="fa fa-lock mr-2"></i>
+                    管理员模式
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- 功能选项卡 -->
+        <div class="bg-white rounded-lg shadow-md p-4 mb-8">
+            <div class="flex flex-wrap mb-4">
+                <button id="tab-menu" class="px-4 py-2 bg-accent text-white rounded-lg mr-2 mb-2">菜品管理</button>
+                <button id="tab-exchange" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg mr-2 mb-2">积分兑换管理</button>
+                <button id="tab-orders" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg mr-2 mb-2">订单历史</button>
+                <button id="tab-settings" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg mb-2">系统设置</button>
+            </div>
+            
+            <!-- 操作提示 -->
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fa fa-info-circle text-blue-500"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-blue-700">
+                            在此页面可以管理所有菜品、积分兑换项目和查看订单历史。修改完成后，请点击"生成代码并更新"按钮应用更改。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 菜品管理选项卡 -->
+        <div id="content-menu" class="bg-white rounded-lg shadow-md p-4 mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">菜品管理</h2>
+                <button id="add-menu-item" class="bg-primary hover:bg-yellow-500 text-black px-4 py-2 rounded-lg transition-colors">
+                    <i class="fa fa-plus mr-1"></i> 添加菜品
+                </button>
+            </div>
+
+            <!-- 菜品分类筛选 -->
+            <div class="mb-4">
+                <label for="category-filter" class="block text-gray-700 mb-2">分类筛选:</label>
+                <select id="category-filter" class="w-full md:w-1/4 border rounded-lg p-2">
+                    <option value="all">所有分类</option>
+                    <option value="recommended">今日推荐</option>
+                    <option value="regular">固定菜式</option>
+                    <option value="hometown">家乡菜式</option>
+                    <option value="seafood">海鲜大餐</option>
+                    <option value="hotpot">各式火锅</option>
+                    <option value="outside">外出就餐</option>
+                </select>
+            </div>
+
+            <!-- 菜品列表 -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white">
+                    <thead>
+                        <tr>
+                            <th class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ID</th>
+                            <th class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">图片</th>
+                            <th class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">名称</th>
+                            <th class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">价格</th>
+                            <th class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">分类</th>
+                            <th class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">家务券内容</th>
+                            <th class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="menu-items-table">
+                        <!-- 菜品列表将通过JavaScript动态生成 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 积分兑换管理选项卡 -->
+        <div id="content-exchange" class="bg-white rounded-lg shadow-md p-4 mb-8 hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">积分兑换管理</h2>
+                <button id="add-exchange-item" class="bg-primary hover:bg-yellow-500 text-black px-4 py-2 rounded-lg transition-colors">
+                    <i class="fa fa-plus mr-1"></i> 添加兑换项目
+                </button>
+            </div>
+
+            <!-- 兑换项目列表 -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white">
+                    <thead>
+                        <tr>
+                            <th class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ID</th>
+                            <th class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">图片</th>
+                            <th class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">名称</th>
+                            <th class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">所需积分</th>
+                            <th class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">描述</th>
+                            <th class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="exchange-items-table">
+                        <!-- 兑换项目列表将通过JavaScript动态生成 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 订单历史选项卡 -->
+        <div id="content-orders" class="bg-white rounded-lg shadow-md p-4 mb-8 hidden">
+            <h2 class="text-xl font-bold mb-4">订单历史</h2>
+            
+            <!-- 订单统计 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-blue-700">总订单数</h3>
+                    <p id="total-orders" class="text-2xl font-bold">0</p>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-green-700">总消费金额</h3>
+                    <p id="total-revenue" class="text-2xl font-bold">¥0.00</p>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-purple-700">总赠送积分</h3>
+                    <p id="total-points-given" class="text-2xl font-bold">0</p>
+                </div>
+            </div>
+
+            <!-- 订单列表 -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white">
+                    <thead>
+                        <tr>
+                            <th class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">订单号</th>
+                            <th class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">日期</th>
+                            <th class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">菜品</th>
+                            <th class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">总金额</th>
+                            <th class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">积分</th>
+                            <th class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">通知方式</th>
+                            <th class="py-2 px-4 border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-table">
+                        <!-- 订单列表将通过JavaScript动态生成 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 系统设置选项卡 -->
+        <div id="content-settings" class="bg-white rounded-lg shadow-md p-4 mb-8 hidden">
+            <h2 class="text-xl font-bold mb-4">系统设置</h2>
+            
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-2">基本设置</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="site-title" class="block text-gray-700 mb-2">网站标题:</label>
+                        <input type="text" id="site-title" class="w-full border rounded-lg p-2" value="海绵宝宝主题餐厅">
+                    </div>
+                    <div>
+                        <label for="welcome-message" class="block text-gray-700 mb-2">欢迎信息:</label>
+                        <input type="text" id="welcome-message" class="w-full border rounded-lg p-2" value="今天想吃什么呢？让我来为你准备美味的晚餐！">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-2">积分设置</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="points-ratio" class="block text-gray-700 mb-2">积分兑换比例 (1元 = ?积分):</label>
+                        <input type="number" id="points-ratio" class="w-full border rounded-lg p-2" value="1" min="0.1" step="0.1">
+                    </div>
+                    <div>
+                        <label for="initial-points" class="block text-gray-700 mb-2">初始积分:</label>
+                        <input type="number" id="initial-points" class="w-full border rounded-lg p-2" value="0" min="0">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-2">安全设置</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="admin-password" class="block text-gray-700 mb-2">设置管理员密码:</label>
+                        <input type="password" id="admin-password" class="w-full border rounded-lg p-2" placeholder="留空表示不设置密码">
+                    </div>
+                    <div>
+                        <label for="enable-password" class="block text-gray-700 mb-2">启用密码保护:</label>
+                        <select id="enable-password" class="w-full border rounded-lg p-2">
+                            <option value="false">否</option>
+                            <option value="true">是</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 生成代码按钮 -->
+        <div class="bg-white rounded-lg shadow-md p-4 text-center">
+            <button id="generate-code" class="bg-accent hover:bg-red-500 text-white px-6 py-3 rounded-lg transition-colors text-lg font-bold">
+                <i class="fa fa-code mr-2"></i> 生成代码并更新
+            </button>
+            <p class="text-sm text-gray-500 mt-2">点击此按钮将生成新的代码并更新主页面</p>
+        </div>
+    </main>
+
+    <!-- 添加/编辑菜品弹窗 -->
+    <div id="menu-item-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg w-full max-w-2xl mx-4 transform transition-all">
+            <div class="p-4 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 id="menu-item-modal-title" class="text-xl font-bold">添加菜品</h3>
+                    <button id="close-menu-item-modal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4">
+                <form id="menu-item-form">
+                    <input type="hidden" id="menu-item-id">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label for="menu-item-name" class="block text-gray-700 mb-1">菜品名称:</label>
+                            <input type="text" id="menu-item-name" class="w-full border rounded-lg p-2" placeholder="输入菜品名称" required>
+                        </div>
+                        <div>
+                            <label for="menu-item-price" class="block text-gray-700 mb-1">价格:</label>
+                            <input type="number" id="menu-item-price" class="w-full border rounded-lg p-2" placeholder="输入价格" step="0.01" min="0" required>
+                        </div>
+                        <div>
+                            <label for="menu-item-category" class="block text-gray-700 mb-1">分类:</label>
+                            <select id="menu-item-category" class="w-full border rounded-lg p-2" required>
+                                <option value="recommended">今日推荐</option>
+                                <option value="regular">固定菜式</option>
+                                <option value="hometown">家乡菜式</option>
+                                <option value="seafood">海鲜大餐</option>
+                                <option value="hotpot">各式火锅</option>
+                                <option value="outside">外出就餐</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="menu-item-coupon" class="block text-gray-700 mb-1">家务券内容:</label>
+                            <input type="text" id="menu-item-coupon" class="w-full border rounded-lg p-2" placeholder="例如：免洗碗一次">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="menu-item-image" class="block text-gray-700 mb-1">图片URL:</label>
+                            <input type="text" id="menu-item-image" class="w-full border rounded-lg p-2" placeholder="输入图片URL" required>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-gray-700 mb-1">图片预览:</label>
+                            <div class="border rounded-lg p-2 flex justify-center">
+                                <img id="menu-item-image-preview" src="https://via.placeholder.com/150" alt="预览" class="max-h-32">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="button" id="cancel-menu-item" class="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg transition-colors mr-2">
+                            取消
+                        </button>
+                        <button type="submit" class="bg-primary hover:bg-yellow-500 text-black py-2 px-4 rounded-lg transition-colors">
+                            保存
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑积分兑换项目弹窗 -->
+    <div id="exchange-item-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg w-full max-w-2xl mx-4 transform transition-all">
+            <div class="p-4 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 id="exchange-item-modal-title" class="text-xl font-bold">添加积分兑换项目</h3>
+                    <button id="close-exchange-item-modal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4">
+                <form id="exchange-item-form">
+                    <input type="hidden" id="exchange-item-id">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label for="exchange-item-name" class="block text-gray-700 mb-1">项目名称:</label>
+                            <input type="text" id="exchange-item-name" class="w-full border rounded-lg p-2" placeholder="输入项目名称" required>
+                        </div>
+                        <div>
+                            <label for="exchange-item-points" class="block text-gray-700 mb-1">所需积分:</label>
+                            <input type="number" id="exchange-item-points" class="w-full border rounded-lg p-2" placeholder="输入所需积分" min="1" required>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="exchange-item-description" class="block text-gray-700 mb-1">描述:</label>
+                            <textarea id="exchange-item-description" class="w-full border rounded-lg p-2" rows="3" placeholder="输入项目描述" required></textarea>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="exchange-item-image" class="block text-gray-700 mb-1">图片URL:</label>
+                            <input type="text" id="exchange-item-image" class="w-full border rounded-lg p-2" placeholder="输入图片URL" required>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-gray-700 mb-1">图片预览:</label>
+                            <div class="border rounded-lg p-2 flex justify-center">
+                                <img id="exchange-item-image-preview" src="https://via.placeholder.com/150" alt="预览" class="max-h-32">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="button" id="cancel-exchange-item" class="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg transition-colors mr-2">
+                            取消
+                        </button>
+                        <button type="submit" class="bg-primary hover:bg-yellow-500 text-black py-2 px-4 rounded-lg transition-colors">
+                            保存
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 订单详情弹窗 -->
+    <div id="order-detail-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg w-full max-w-2xl mx-4 transform transition-all">
+            <div class="p-4 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 id="order-detail-modal-title" class="text-xl font-bold">订单详情</h3>
+                    <button id="close-order-detail-modal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4">
+                <div id="order-detail-content">
+                    <!-- 订单详情将通过JavaScript动态生成 -->
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button id="close-order-detail" class="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg transition-colors">
+                        关闭
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 生成代码弹窗 -->
+    <div id="code-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg w-full max-w-4xl mx-4 transform transition-all">
+            <div class="p-4 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold">生成的代码</h3>
+                    <button id="close-code-modal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4">
+                <div class="mb-4">
+                    <div class="flex justify-between mb-2">
+                        <h4 class="font-semibold">请复制以下代码并替换到index.html文件中相应位置</h4>
+                        <button id="copy-code" class="bg-secondary hover:bg-blue-600 text-white py-1 px-3 rounded-lg transition-colors text-sm">
+                            <i class="fa fa-copy mr-1"></i> 复制代码
+                        </button>
+                    </div>
+                    <div class="border rounded-lg p-2 bg-gray-50">
+                        <textarea id="generated-code" class="w-full h-64 p-2 font-mono text-sm" readonly></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-between">
+                    <button id="download-index" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg transition-colors">
+                        <i class="fa fa-download mr-1"></i> 下载更新后的index.html
+                    </button>
+                    <button id="apply-code" class="bg-accent hover:bg-red-500 text-white py-2 px-4 rounded-lg transition-colors">
+                        <i class="fa fa-check mr-1"></i> 应用更改
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 遮罩层 -->
+    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
+
+    <!-- 成功提示 -->
+    <div id="success-toast" class="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg hidden">
+        <div class="flex items-center">
+            <i class="fa fa-check-circle mr-2"></i>
+            <span id="success-message">操作成功</span>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // 菜品数据
+        let menuItems = [];
+        
+        // 积分兑换项目
+        let exchangeItems = [];
+        
+        // 订单历史
+        let orderHistory = [];
+        
+        // 积分系统
+        let totalPoints = 0;
+        
+        // 当前编辑的菜品/兑换项目索引
+        let currentEditIndex = -1;
+        
+        // 当前编辑的类型 ('menu' 或 'exchange')
+        let currentEditType = '';
+        
+        // DOM 元素
+        const overlay = document.getElementById('overlay');
+        const successToast = document.getElementById('success-toast');
+        const successMessage = document.getElementById('success-message');
+        
+        // 选项卡元素
+        const tabMenu = document.getElementById('tab-menu');
+        const tabExchange = document.getElementById('tab-exchange');
+        const tabOrders = document.getElementById('tab-orders');
+        const tabSettings = document.getElementById('tab-settings');
+        
+        const contentMenu = document.getElementById('content-menu');
+        const contentExchange = document.getElementById('content-exchange');
+        const contentOrders = document.getElementById('content-orders');
+        const contentSettings = document.getElementById('content-settings');
+        
+        // 菜品管理元素
+        const addMenuItem = document.getElementById('add-menu-item');
+        const menuItemModal = document.getElementById('menu-item-modal');
+        const closeMenuItemModal = document.getElementById('close-menu-item-modal');
+        const cancelMenuItem = document.getElementById('cancel-menu-item');
+        const menuItemForm = document.getElementById('menu-item-form');
+        const menuItemId = document.getElementById('menu-item-id');
+        const menuItemName = document.getElementById('menu-item-name');
+        const menuItemPrice = document.getElementById('menu-item-price');
+        const menuItemCategory = document.getElementById('menu-item-category');
+        const menuItemCoupon = document.getElementById('menu-item-coupon');
+        const menuItemImage = document.getElementById('menu-item-image');
+        const menuItemImagePreview = document.getElementById('menu-item-image-preview');
+        const menuItemsTable = document.getElementById('menu-items-table');
+        const categoryFilter = document.getElementById('category-filter');
+        
+        // 积分兑换管理元素
+        const addExchangeItem = document.getElementById('add-exchange-item');
+        const exchangeItemModal = document.getElementById('exchange-item-modal');
+        const closeExchangeItemModal = document.getElementById('close-exchange-item-modal');
+        const cancelExchangeItem = document.getElementById('cancel-exchange-item');
+        const exchangeItemForm = document.getElementById('exchange-item-form');
+        const exchangeItemId = document.getElementById('exchange-item-id');
+        const exchangeItemName = document.getElementById('exchange-item-name');
+        const exchangeItemPoints = document.getElementById('exchange-item-points');
+        const exchangeItemDescription = document.getElementById('exchange-item-description');
+        const exchangeItemImage = document.getElementById('exchange-item-image');
+        const exchangeItemImagePreview = document.getElementById('exchange-item-image-preview');
+        const exchangeItemsTable = document.getElementById('exchange-items-table');
+        
+        // 订单历史元素
+        const ordersTable = document.getElementById('orders-table');
+        const totalOrders = document.getElementById('total-orders');
+        const totalRevenue = document.getElementById('total-revenue');
+        const totalPointsGiven = document.getElementById('total-points-given');
+        const orderDetailModal = document.getElementById('order-detail-modal');
+        const closeOrderDetailModal = document.getElementById('close-order-detail-modal');
+        const closeOrderDetail = document.getElementById('close-order-detail');
+        const orderDetailContent = document.getElementById('order-detail-content');
+        
+        // 系统设置元素
+        const siteTitle = document.getElementById('site-title');
+        const welcomeMessage = document.getElementById('welcome-message');
+        const pointsRatio = document.getElementById('points-ratio');
+        const initialPoints = document.getElementById('initial-points');
+        const adminPassword = document.getElementById('admin-password');
+        const enablePassword = document.getElementById('enable-password');
+        
+        // 生成代码元素
+        const generateCode = document.getElementById('generate-code');
+        const codeModal = document.getElementById('code-modal');
+        const closeCodeModal = document.getElementById('close-code-modal');
+        const copyCode = document.getElementById('copy-code');
+        const generatedCode = document.getElementById('generated-code');
+        const applyCode = document.getElementById('apply-code');
+        const downloadIndex = document.getElementById('download-index');
+        
+        // 初始化页面
+        function init() {
+            // 从本地存储加载数据
+            loadData();
+            
+            // 渲染菜品列表
+            renderMenuItems();
+            
+            // 渲染积分兑换项目列表
+            renderExchangeItems();
+            
+            // 渲染订单历史
+            renderOrders();
+            
+            // 添加事件监听器
+            addEventListeners();
+        }
+        
+        // 从本地存储加载数据
+        function loadData() {
+            const savedMenuItems = localStorage.getItem('menuItems');
+            const savedExchangeItems = localStorage.getItem('exchangeItems');
+            const savedOrderHistory = localStorage.getItem('orderHistory');
+            const savedTotalPoints = localStorage.getItem('totalPoints');
+            
+            if (savedMenuItems) {
+                menuItems = JSON.parse(savedMenuItems);
+            } else {
+                // 默认菜品数据
+                menuItems = [
+                    {
+                        id: 1,
+                        name: '蟹黄堡',
+                        price: 25.00,
+                        category: 'recommended',
+                        image: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/13408f2f348542bdbad5adac0af8f0cb~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954663&x-signature=4D4LtxIo5DDVhD3abD5kvTUwPDE%3D',
+                        couponText: '免洗碗一次'
+                    },
+                    {
+                        id: 2,
+                        name: '海绵宝宝披萨',
+                        price: 35.00,
+                        category: 'recommended',
+                        image: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/13408f2f348542bdbad5adac0af8f0cb~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954663&x-signature=4D4LtxIo5DDVhD3abD5kvTUwPDE%3D',
+                        couponText: '按摩10分钟'
+                    },
+                    {
+                        id: 3,
+                        name: '派大星冰淇淋',
+                        price: 15.00,
+                        category: 'regular',
+                        image: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/eec6af1f0ff54e6d920cbe7d7a8ab857~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954663&x-signature=Az7jDkKToT5PoZNkmIFWntaynSg%3D',
+                        couponText: '倒垃圾一次'
+                    }
+                ];
+            }
+            
+            if (savedExchangeItems) {
+                exchangeItems = JSON.parse(savedExchangeItems);
+            } else {
+                // 默认积分兑换项目
+                exchangeItems = [
+                    {
+                        id: 101,
+                        name: '免洗碗券',
+                        points: 50,
+                        description: '使用此券可免除一次洗碗任务',
+                        image: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/e8c0e9c3c59541d78f2e95db821a22fe~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954679&x-signature=Ve806aNDQYM%2Fx%2FN%2FT0qrgN5L7zE%3D'
+                    },
+                    {
+                        id: 102,
+                        name: '按摩券',
+                        points: 100,
+                        description: '享受15分钟的肩颈按摩服务',
+                        image: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/e8c0e9c3c59541d78f2e95db821a22fe~tplv-a9rns2rl98-image.image?rcl=20251210183051E8B51569AAB8CD1FE836&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767954679&x-signature=Ve806aNDQYM%2Fx%2FN%2FT0qrgN5L7zE%3D'
+                    }
+                ];
+            }
+            
+            if (savedOrderHistory) {
+                orderHistory = JSON.parse(savedOrderHistory);
+            }
+            
+            if (savedTotalPoints) {
+                totalPoints = parseInt(savedTotalPoints);
+            }
+        }
+        
+        // 保存数据到本地存储
+        function saveData() {
+            localStorage.setItem('menuItems', JSON.stringify(menuItems));
+            localStorage.setItem('exchangeItems', JSON.stringify(exchangeItems));
+            localStorage.setItem('orderHistory', JSON.stringify(orderHistory));
+            localStorage.setItem('totalPoints', totalPoints.toString());
+        }
+        
+        // 渲染菜品列表
+        function renderMenuItems() {
+            menuItemsTable.innerHTML = '';
+            
+            const filter = categoryFilter.value;
+            const filteredItems = filter === 'all' ? menuItems : menuItems.filter(item => item.category === filter);
+            
+            filteredItems.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="py-2 px-4 border-b border-gray-200">${item.id}</td>
+                    <td class="py-2 px-4 border-b border-gray-200">
+                        <img src="${item.image}" alt="${item.name}" class="w-12 h-12 object-cover rounded">
+                    </td>
+                    <td class="py-2 px-4 border-b border-gray-200">${item.name}</td>
+                    <td class="py-2 px-4 border-b border-gray-200">¥${item.price.toFixed(2)}</td>
+                    <td class="py-2 px-4 border-b border-gray-200">${getCategoryName(item.category)}</td>
+                    <td class="py-2 px-4 border-b border-gray-200">${item.couponText || '自定义家务券'}</td>
+                    <td class="py-2 px-4 border-b border-gray-200">
+                        <button class="text-primary hover:text-yellow-500 mr-2 edit-menu-item" data-index="${index}">
+                            <i class="fa fa-pencil"></i>
+                        </button>
+                        <button class="text-red-500 hover:text-red-700 delete-menu-item" data-index="${index}">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                menuItemsTable.appendChild(row);
+            });
+            
+            // 添加编辑菜品事件
+            document.querySelectorAll('.edit-menu-item').forEach(button => {
+                button.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    editMenuItem(index);
+                });
+            });
+            
+            // 添加删除菜品事件
+            document.querySelectorAll('.delete-menu-item').forEach(button => {
+                button.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    deleteMenuItem(index);
+                });
+            });
+        }
+        
+        // 渲染积分兑换项目列表
+        function renderExchangeItems() {
+            exchangeItemsTable.innerHTML = '';
+            
+            exchangeItems.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="py-2 px-4 border-b border-gray-200">${item.id}</td>
+                    <td class="py-2 px-4 border-b border-gray-200">
+                        <img src="${item.image}" alt="${item.name}" class="w-12 h-12 object-cover rounded">
+                    </td>
+                    <td class="py-2 px-4 border-b border-gray-200">${item.name}</td>
+                    <td class="py-2 px-4 border-b border-gray-200">${item.points} 积分</td>
+                    <td class="py-2 px-4 border-b border-gray-200">${item.description}</td>
+                    <td class="py-2 px-4 border-b border-gray-200">
+                        <button class="text-primary hover:text-yellow-500 mr-2 edit-exchange-item" data-index="${index}">
+                            <i class="fa fa-pencil"></i>
+                        </button>
+                        <button class="text-red-500 hover:text-red-700 delete-exchange-item" data-index="${index}">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                exchangeItemsTable.appendChild(row);
+            });
+            
+            // 添加编辑兑换项目事件
+            document.querySelectorAll('.edit-exchange-item').forEach(button => {
+                button.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    editExchangeItem(index);
+                });
+            });
+            
+            // 添加删除兑换项目事件
+            document.querySelectorAll('.delete-exchange-item').forEach(button => {
+                button.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    deleteExchangeItem(index);
+                });
+            });
+        }
+        
+        // 渲染订单历史
+        function renderOrders() {
+            ordersTable.innerHTML = '';
+            
+            // 更新订单统计
+            totalOrders.textContent = orderHistory.length;
+            
+            const totalRev = orderHistory.reduce((sum, order) => sum + order.total, 0);
+            totalRevenue.textContent = `¥${totalRev.toFixed(2)}`;
+            
+            const totalPts = orderHistory.reduce((sum, order) => sum + order.points, 0);
+            totalPointsGiven.textContent = totalPts;
+            
+            // 按日期降序排序
+            const sortedOrders = [...orderHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            sortedOrders.forEach((order, index) => {
+                const row = document.createElement('tr');
+                
+                // 格式化订单日期
+                const orderDate = new Date(order.date);
+                const formattedDate = orderDate.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                // 获取订单中的菜品名称列表
+                const itemNames = order.items.map(item => item.name).join(', ');
+                
+                row.innerHTML = `
+                    <td class="py-2 px-4 border-b border-gray-200">#${order.id}</td>
+                    <td class="py-2 px-4 border-b border-gray-200">${formattedDate}</td>
+                    <td class="py-2 px-4 border-b border-gray-200">${itemNames}</td>
+                    <td class="py-2 px-4 border-b border-gray-200">¥${order.total.toFixed(2)}</td>
+                    <td class="py-2 px-4 border-b border-gray-200">${order.points}</td>
+                    <td class="py-2 px-4 border-b border-gray-200">${order.notificationMethod === 'email' ? '邮件' : '微信'}</td>
+                    <td class="py-2 px-4 border-b border-gray-200">
+                        <button class="text-secondary hover:text-blue-600 view-order" data-index="${index}">
+                            <i class="fa fa-eye"></i>
+                        </button>
+                    </td>
+                `;
+                ordersTable.appendChild(row);
+            });
+            
+            // 添加查看订单详情事件
+            document.querySelectorAll('.view-order').forEach(button => {
+                button.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    viewOrderDetail(index);
+                });
+            });
+        }
+        
+        // 添加事件监听器
+        function addEventListeners() {
+            // 选项卡切换
+            tabMenu.addEventListener('click', () => switchTab('menu'));
+            tabExchange.addEventListener('click', () => switchTab('exchange'));
+            tabOrders.addEventListener('click', () => switchTab('orders'));
+            tabSettings.addEventListener('click', () => switchTab('settings'));
+            
+            // 菜品管理
+            addMenuItem.addEventListener('click', () => openMenuItemModal());
+            closeMenuItemModal.addEventListener('click', () => closeMenuItemModalFunc());
+            cancelMenuItem.addEventListener('click', () => closeMenuItemModalFunc());
+            menuItemForm.addEventListener('submit', (e) => saveMenuItem(e));
+            menuItemImage.addEventListener('input', updateMenuItemImagePreview);
+            categoryFilter.addEventListener('change', renderMenuItems);
+            
+            // 积分兑换管理
+            addExchangeItem.addEventListener('click', () => openExchangeItemModal());
+            closeExchangeItemModal.addEventListener('click', () => closeExchangeItemModalFunc());
+            cancelExchangeItem.addEventListener('click', () => closeExchangeItemModalFunc());
+            exchangeItemForm.addEventListener('submit', (e) => saveExchangeItem(e));
+            exchangeItemImage.addEventListener('input', updateExchangeItemImagePreview);
+            
+            // 订单详情
+            closeOrderDetailModal.addEventListener('click', closeOrderDetailModalFunc);
+            closeOrderDetail.addEventListener('click', closeOrderDetailModalFunc);
+            
+            // 生成代码
+            generateCode.addEventListener('click', generateAndShowCode);
+            closeCodeModal.addEventListener('click', closeCodeModalFunc);
+            copyCode.addEventListener('click', copyGeneratedCode);
+            applyCode.addEventListener('click', applyGeneratedCode);
+            downloadIndex.addEventListener('click', downloadUpdatedIndex);
+        }
+        
+        // 切换选项卡
+        function switchTab(tab) {
+            // 重置所有选项卡样式
+            tabMenu.className = 'px-4 py-2 bg-gray-200 text-gray-700 rounded-lg mr-2 mb-2';
+            tabExchange.className = 'px-4 py-2 bg-gray-200 text-gray-700 rounded-lg mr-2 mb-2';
+            tabOrders.className = 'px-4 py-2 bg-gray-200 text-gray-700 rounded-lg mr-2 mb-2';
+            tabSettings.className = 'px-4 py-2 bg-gray-200 text-gray-700 rounded-lg mb-2';
+            
+            // 隐藏所有内容
+            contentMenu.classList.add('hidden');
+            contentExchange.classList.add('hidden');
+            contentOrders.classList.add('hidden');
+            contentSettings.classList.add('hidden');
+            
+            // 激活选中的选项卡
+            switch (tab) {
+                case 'menu':
+                    tabMenu.className = 'px-4 py-2 bg-accent text-white rounded-lg mr-2 mb-2';
+                    contentMenu.classList.remove('hidden');
+                    break;
+                case 'exchange':
+                    tabExchange.className = 'px-4 py-2 bg-accent text-white rounded-lg mr-2 mb-2';
+                    contentExchange.classList.remove('hidden');
+                    break;
+                case 'orders':
+                    tabOrders.className = 'px-4 py-2 bg-accent text-white rounded-lg mr-2 mb-2';
+                    contentOrders.classList.remove('hidden');
+                    renderOrders();
+                    break;
+                case 'settings':
+                    tabSettings.className = 'px-4 py-2 bg-accent text-white rounded-lg mb-2';
+                    contentSettings.classList.remove('hidden');
+                    break;
+            }
+        }
+        
+        // 打开菜品编辑弹窗
+        function openMenuItemModal(index = -1) {
+            currentEditType = 'menu';
+            currentEditIndex = index;
+            
+            if (index === -1) {
+                // 添加新菜品
+                document.getElementById('menu-item-modal-title').textContent = '添加菜品';
+                menuItemForm.reset();
+                menuItemId.value = '';
+                menuItemImagePreview.src = 'https://via.placeholder.com/150';
+            } else {
+                // 编辑现有菜品
+                document.getElementById('menu-item-modal-title').textContent = '编辑菜品';
+                const item = menuItems[index];
+                menuItemId.value = item.id;
+                menuItemName.value = item.name;
+                menuItemPrice.value = item.price;
+                menuItemCategory.value = item.category;
+                menuItemCoupon.value = item.couponText || '';
+                menuItemImage.value = item.image;
+                menuItemImagePreview.src = item.image;
+            }
+            
+            menuItemModal.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+        }
+        
+        // 关闭菜品编辑弹窗
+        function closeMenuItemModalFunc() {
+            menuItemModal.classList.add('hidden');
+            overlay.classList.add('hidden');
+        }
+        
+        // 保存菜品
+        function saveMenuItem(e) {
+            e.preventDefault();
+            
+            const id = menuItemId.value ? parseInt(menuItemId.value) : Date.now();
+            const name = menuItemName.value.trim();
+            const price = parseFloat(menuItemPrice.value);
+            const category = menuItemCategory.value;
+            const couponText = menuItemCoupon.value.trim();
+            const image = menuItemImage.value.trim();
+            
+            if (!name || isNaN(price) || !image) {
+                alert('请填写完整的菜品信息');
+                return;
+            }
+            
+            const item = {
+                id,
+                name,
+                price,
+                category,
+                couponText: couponText || '自定义家务券',
+                image
+            };
+            
+            if (currentEditIndex === -1) {
+                // 添加新菜品
+                menuItems.push(item);
+                showSuccessToast('菜品添加成功');
+            } else {
+                // 更新现有菜品
+                menuItems[currentEditIndex] = item;
+                showSuccessToast('菜品更新成功');
+            }
+            
+            // 保存数据
+            saveData();
+            
+            // 重新渲染菜品列表
+            renderMenuItems();
+            
+            // 关闭弹窗
+            closeMenuItemModalFunc();
+        }
+        
+        // 编辑菜品
+        function editMenuItem(index) {
+            openMenuItemModal(index);
+        }
+        
+        // 删除菜品
+        function deleteMenuItem(index) {
+            if (confirm('确定要删除这个菜品吗？')) {
+                menuItems.splice(index, 1);
+                saveData();
+                renderMenuItems();
+                showSuccessToast('菜品删除成功');
+            }
+        }
+        
+        // 更新菜品图片预览
+        function updateMenuItemImagePreview() {
+            const imageUrl = menuItemImage.value.trim();
+            menuItemImagePreview.src = imageUrl || 'https://via.placeholder.com/150';
+        }
+        
+        // 打开积分兑换项目编辑弹窗
+        function openExchangeItemModal(index = -1) {
+            currentEditType = 'exchange';
+            currentEditIndex = index;
+            
+            if (index === -1) {
+                // 添加新兑换项目
+                document.getElementById('exchange-item-modal-title').textContent = '添加积分兑换项目';
+                exchangeItemForm.reset();
+                exchangeItemId.value = '';
+                exchangeItemImagePreview.src = 'https://via.placeholder.com/150';
+            } else {
+                // 编辑现有兑换项目
+                document.getElementById('exchange-item-modal-title').textContent = '编辑积分兑换项目';
+                const item = exchangeItems[index];
+                exchangeItemId.value = item.id;
+                exchangeItemName.value = item.name;
+                exchangeItemPoints.value = item.points;
+                exchangeItemDescription.value = item.description;
+                exchangeItemImage.value = item.image;
+                exchangeItemImagePreview.src = item.image;
+            }
+            
+            exchangeItemModal.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+        }
+        
+        // 关闭积分兑换项目编辑弹窗
+        function closeExchangeItemModalFunc() {
+            exchangeItemModal.classList.add('hidden');
+            overlay.classList.add('hidden');
+        }
+        
+        // 保存积分兑换项目
+        function saveExchangeItem(e) {
+            e.preventDefault();
+            
+            const id = exchangeItemId.value ? parseInt(exchangeItemId.value) : Date.now();
+            const name = exchangeItemName.value.trim();
+            const points = parseInt(exchangeItemPoints.value);
+            const description = exchangeItemDescription.value.trim();
+            const image = exchangeItemImage.value.trim();
+            
+            if (!name || isNaN(points) || !description || !image) {
+                alert('请填写完整的兑换项目信息');
+                return;
+            }
+            
+            const item = {
+                id,
+                name,
+                points,
+                description,
+                image
+            };
+            
+            if (currentEditIndex === -1) {
+                // 添加新兑换项目
+                exchangeItems.push(item);
+                showSuccessToast('兑换项目添加成功');
+            } else {
+                // 更新现有兑换项目
+                exchangeItems[currentEditIndex] = item;
+                showSuccessToast('兑换项目更新成功');
+            }
+            
+            // 保存数据
+            saveData();
+            
+            // 重新渲染兑换项目列表
+            renderExchangeItems();
+            
+            // 关闭弹窗
+            closeExchangeItemModalFunc();
+        }
+        
+        // 编辑积分兑换项目
+        function editExchangeItem(index) {
+            openExchangeItemModal(index);
+        }
+        
+        // 删除积分兑换项目
+        function deleteExchangeItem(index) {
+            if (confirm('确定要删除这个兑换项目吗？')) {
+                exchangeItems.splice(index, 1);
+                saveData();
+                renderExchangeItems();
+                showSuccessToast('兑换项目删除成功');
+            }
+        }
+        
+        // 更新积分兑换项目图片预览
+        function updateExchangeItemImagePreview() {
+            const imageUrl = exchangeItemImage.value.trim();
+            exchangeItemImagePreview.src = imageUrl || 'https://via.placeholder.com/150';
+        }
+        
+        // 查看订单详情
+        function viewOrderDetail(index) {
+            const order = orderHistory[index];
+            
+            // 格式化订单日期
+            const orderDate = new Date(order.date);
+            const formattedDate = orderDate.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            
+            // 构建订单详情HTML
+            let detailHTML = `
+                <div class="mb-4">
+                    <h4 class="font-bold text-lg">订单信息</h4>
+                    <div class="grid grid-cols-2 gap-2 mt-2">
+                        <div>
+                            <span class="text-gray-600">订单号:</span>
+                            <span class="font-semibold">#${order.id}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-600">下单时间:</span>
+                            <span>${formattedDate}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-600">通知方式:</span>
+                            <span>${order.notificationMethod === 'email' ? '邮件通知' : '微信通知'}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-600">获得积分:</span>
+                            <span class="text-secondary font-semibold">${order.points} 积分</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h4 class="font-bold text-lg">订单菜品</h4>
+                    <div class="border rounded-lg mt-2">
+            `;
+            
+            order.items.forEach(item => {
+                detailHTML += `
+                    <div class="flex items-center p-3 border-b last:border-b-0">
+                        <img src="${item.image}" alt="${item.name}" class="w-12 h-12 object-cover rounded mr-3">
+                        <div class="flex-1">
+                            <div class="font-semibold">${item.name}</div>
+                            <div class="text-sm text-gray-600">¥${item.price.toFixed(2)}</div>
+                        </div>
+                        <div class="bg-yellow-50 px-2 py-1 rounded text-sm">
+                            <i class="fa fa-gift text-primary mr-1"></i> ${item.couponText || '自定义家务券'}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            detailHTML += `
+                    </div>
+                </div>
+                
+                <div class="text-right">
+                    <div class="text-lg font-bold">总计: ¥${order.total.toFixed(2)}</div>
+                </div>
+            `;
+            
+            orderDetailContent.innerHTML = detailHTML;
+            orderDetailModal.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+        }
+        
+        // 关闭订单详情弹窗
+        function closeOrderDetailModalFunc() {
+            orderDetailModal.classList.add('hidden');
+            overlay.classList.add('hidden');
+        }
+        
+        // 生成并显示代码
+        function generateAndShowCode() {
+            // 获取系统设置
+            const settings = {
+                siteTitle: siteTitle.value.trim() || '海绵宝宝主题餐厅',
+                welcomeMessage: welcomeMessage.value.trim() || '今天想吃什么呢？让我来为你准备美味的晚餐！',
+                pointsRatio: parseFloat(pointsRatio.value) || 1,
+                initialPoints: parseInt(initialPoints.value) || 0,
+                enablePassword: enablePassword.value === 'true',
+                adminPassword: adminPassword.value.trim()
+            };
+            
+            // 生成代码
+            let code = `// 系统设置\nconst settings = ${JSON.stringify(settings, null, 2)};\n\n// 积分兑换项目\nlet exchangeItems = ${JSON.stringify(exchangeItems, null, 2)};\n\n// 菜品数据\nlet menuItems = ${JSON.stringify(menuItems, null, 2)};`;
+            
+            // 显示代码
+            generatedCode.value = code;
+            codeModal.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+        }
+        
+        // 关闭代码弹窗
+        function closeCodeModalFunc() {
+            codeModal.classList.add('hidden');
+            overlay.classList.add('hidden');
+        }
+        
+        // 复制生成的代码
+        function copyGeneratedCode() {
+            generatedCode.select();
+            document.execCommand('copy');
+            showSuccessToast('代码已复制到剪贴板');
+        }
+        
+        // 应用生成的代码
+        function applyGeneratedCode() {
+            // 在实际应用中，这里应该将代码写入index.html文件
+            // 由于浏览器安全限制，我们只能模拟这个过程
+            
+            // 保存设置到本地存储
+            const settings = {
+                siteTitle: siteTitle.value.trim() || '海绵宝宝主题餐厅',
+                welcomeMessage: welcomeMessage.value.trim() || '今天想吃什么呢？让我来为你准备美味的晚餐！',
+                pointsRatio: parseFloat(pointsRatio.value) || 1,
+                initialPoints: parseInt(initialPoints.value) || 0,
+                enablePassword: enablePassword.value === 'true',
+                adminPassword: adminPassword.value.trim()
+            };
+            
+            localStorage.setItem('settings', JSON.stringify(settings));
+            
+            showSuccessToast('代码已应用，页面将在3秒后刷新');
+            
+            // 关闭弹窗
+            setTimeout(() => {
+                closeCodeModalFunc();
+                location.reload();
+            }, 3000);
+        }
+        
+        // 下载更新后的index.html
+        function downloadUpdatedIndex() {
+            // 在实际应用中，这里应该生成完整的index.html文件并提供下载
+            // 由于浏览器安全限制，我们只能提供代码片段下载
+            
+            const code = generatedCode.value;
+            const blob = new Blob([code], { type: 'text/javascript' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'spongebob-menu-data.js';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showSuccessToast('数据文件已下载');
+        }
+        
+        // 显示成功提示
+        function showSuccessToast(message) {
+            successMessage.textContent = message;
+            successToast.classList.remove('hidden');
+            
+            setTimeout(() => {
+                successToast.classList.add('hidden');
+            }, 3000);
+        }
+        
+        // 获取分类名称
+        function getCategoryName(category) {
+            const categoryNames = {
+                'recommended': '今日推荐',
+                'regular': '固定菜式',
+                'hometown': '家乡菜式',
+                'seafood': '海鲜大餐',
+                'hotpot': '各式火锅',
+                'outside': '外出就餐'
+            };
+            
+            return categoryNames[category] || category;
+        }
+        
+        // 初始化
+        init();
+    </script>
+</body>
+</html>
